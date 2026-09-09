@@ -1,6 +1,20 @@
+const URLS={
+beginnerIdle:'https://i.imgur.com/rVHmSnO.jpeg',
+beginnerGood:'https://i.imgur.com/gYnugnU.jpeg',
+beginnerBad:'https://i.imgur.com/kxvXRoW.jpeg',
+proIdle:'https://i.imgur.com/V14GfXC.jpeg',
+proIdlePlus:'https://i.imgur.com/Sr2n9CA.jpeg',
+proGood:'https://i.imgur.com/BMiIM4X.jpeg',
+proBad:'https://i.imgur.com/LXnRlAz.jpeg',
+milestone10:'https://i.imgur.com/t2mmvGS.jpeg',
+milestone20:'https://i.imgur.com/Y6o8sir.jpeg',
+milestone30:'https://i.imgur.com/LFQgv4s.jpeg',
+endingPerfect:'https://i.imgur.com/nPzY1Hm.jpeg',
+title:'https://i.imgur.com/0vgA5sK.jpeg'
+};
 function pick(k){
   const d=window.IMAGE_DATA||{};
-  return d[k]||d.beginnerIdle||d.proIdle||d.title||'';
+  return d[k]||URLS[k]||d.beginnerIdle||d.proIdle||d.title||URLS.beginnerIdle||'';
 }
 const IMG={
 beginnerIdle:pick('beginnerIdle'),
