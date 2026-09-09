@@ -2,17 +2,41 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>それゆけワンワン君｜外旭川わんわん保育園</title>
 <style>
 :root{--pink:#ff6699;--pink-light:#ff99cc;--cream:#fff0f5}
-*{box-sizing:border-box}
-body{font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;background:linear-gradient(180deg,#d6efff,#ffeaf4);display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;user-select:none;touch-action:manipulation}
-.game{background:#fff;width:min(480px,100vw);height:min(640px,100vh);border-radius:20px;box-shadow:0 10px 25px rgba(0,0,0,.12);overflow:hidden;border:4px solid var(--pink-light);display:flex;position:relative}
-#mute,#progress{position:absolute;top:10px;height:40px;background:rgba(255,255,255,.9);border:2px solid var(--pink-light);z-index:200;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.1)}
-#mute{right:10px;width:40px;border-radius:50%;cursor:pointer;font-size:18px}
-#progress{left:10px;display:none;padding:0 10px;border-radius:20px;font-size:12px;font-weight:bold;color:#c2185b}
-#title{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;background:#eaf6ff center 30%/cover no-repeat}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  margin:0;padding:0;width:100%;height:100%;
+  height:100svh;max-height:100svh;
+  overflow:hidden;overscroll-behavior:none;
+  position:fixed;inset:0;
+  font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+  background:linear-gradient(180deg,#d6efff,#ffeaf4);
+  display:flex;justify-content:center;align-items:stretch;
+  user-select:none;touch-action:manipulation;
+}
+.game{
+  background:#fff;
+  width:min(480px,100%);
+  height:100%;
+  max-height:100svh;
+  overflow:hidden;
+  border:4px solid var(--pink-light);
+  border-radius:0;
+  display:flex;
+  position:relative;
+  box-shadow:0 10px 25px rgba(0,0,0,.12);
+}
+@media (min-width:481px){
+  body{align-items:center}
+  .game{height:min(640px,100svh);border-radius:20px}
+}
+#mute,#progress{position:absolute;top:max(8px,env(safe-area-inset-top));height:36px;background:rgba(255,255,255,.92);border:2px solid var(--pink-light);z-index:200;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+#mute{right:8px;width:36px;border-radius:50%;cursor:pointer;font-size:16px}
+#progress{left:8px;display:none;padding:0 10px;border-radius:20px;font-size:12px;font-weight:bold;color:#c2185b}
+#title{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;background:#eaf6ff center 30%/cover no-repeat;padding-bottom:max(12px,env(safe-area-inset-bottom))}
 .title{font-size:28px;font-weight:bold;color:var(--pink);margin:0 0 4px;text-shadow:2px 2px 0 #fff;line-height:1.3}
 .sub{font-size:12px;color:#5a7a96;margin-bottom:12px}
 .btns{display:flex;flex-direction:column;gap:10px;width:84%}
@@ -20,24 +44,24 @@ body{font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;background:linear
 .bgn{background:#43e97b;border:2px solid #38f9d7}
 .pro{background:var(--pink);border:2px solid var(--pink-light)}
 .hs{margin:8px 0 16px;font-size:13px;color:#555}
-.main{flex:1;display:flex;flex-direction:column;min-width:0}
-.side{width:58px;background:var(--cream);border-left:2px solid var(--pink-light);display:flex;flex-direction:column;align-items:center;padding:10px 0}
-.label{font-size:12px;font-weight:bold;color:var(--pink);writing-mode:vertical-rl;letter-spacing:3px;margin-bottom:10px}
-.gauge{width:20px;flex:1;background:#fff;border:2px solid var(--pink-light);border-radius:10px;overflow:hidden;display:flex;flex-direction:column-reverse}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.side{width:52px;flex:0 0 52px;background:var(--cream);border-left:2px solid var(--pink-light);display:flex;flex-direction:column;align-items:center;padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+.label{font-size:11px;font-weight:bold;color:var(--pink);writing-mode:vertical-rl;letter-spacing:2px;margin-bottom:8px}
+.gauge{width:18px;flex:1;background:#fff;border:2px solid var(--pink-light);border-radius:10px;overflow:hidden;display:flex;flex-direction:column-reverse;min-height:0}
 .fill{width:100%;height:0;background:linear-gradient(0deg,#4facfe,#00f2fe);transition:height .5s}
-.num{margin-top:10px;font-weight:bold;font-size:14px}
-.char{background:#ffebf5;height:54%;display:flex;justify-content:center;align-items:flex-end;position:relative;overflow:hidden}
-.char img{width:100%;height:108%;object-fit:contain;object-position:center bottom;margin-bottom:-8%;image-rendering:auto}
-.bubble{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.9);border-radius:10px;padding:10px 14px;width:92%;min-height:72px;max-height:46%;overflow:auto;border:2px solid #333;font-weight:800;font-size:15px;line-height:1.45;white-space:pre-wrap}
+.num{margin-top:8px;font-weight:bold;font-size:13px}
+.char{flex:1 1 0;min-height:0;background:#ffebf5;display:flex;justify-content:center;align-items:flex-end;position:relative;overflow:hidden}
+.char img{width:100%;height:100%;object-fit:cover;object-position:center top;image-rendering:auto}
+.bubble{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);border-radius:10px;padding:8px 12px;width:92%;min-height:56px;max-height:42%;overflow:auto;border:2px solid #333;font-weight:800;font-size:14px;line-height:1.4;white-space:pre-wrap}
 .bubble.hide{display:none}
-.quiz{flex:1;padding:12px 14px 16px;overflow:auto;display:flex;flex-direction:column;justify-content:center}
-.grid{display:grid;gap:8px}
-button.choice,.quiz>button{background:#4da6ff;color:#fff;border:none;padding:12px 10px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
+.quiz{flex:0 0 auto;padding:8px 10px max(10px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;justify-content:flex-start}
+.grid{display:grid;gap:6px}
+button.choice,.quiz>button{background:#4da6ff;color:#fff;border:none;padding:10px 8px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;line-height:1.3}
 button.choice:disabled{background:#ccc;color:#666}
 .jump{animation:j .5s}
 .shake{animation:s .5s}
-@keyframes j{50%{transform:translateY(-16px)}}
-@keyframes s{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes j{50%{transform:translateY(-12px)}}
+@keyframes s{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 </style>
 </head>
 <body>
@@ -64,6 +88,6 @@ button.choice:disabled{background:#ccc;color:#666}
 </div>
 <script src="questions.js"></script>
 <script src="questions-pro.js"></script>
-<script src="game.js?v=4"></script>
+<script src="game.js?v=5"></script>
 </body>
 </html>
