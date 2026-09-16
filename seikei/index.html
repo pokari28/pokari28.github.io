@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>クソハムちゃんの政経150問特訓でちゅ！</title>
+<style>
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff9e6;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+.game-container{background:#fff;width:480px;height:600px;border-radius:20px;box-shadow:0 10px 25px rgba(0,0,0,.1);overflow:hidden;border:5px solid #8b5a2b;position:relative}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;box-sizing:border-box}
+.active-screen{display:flex!important;opacity:1;z-index:10}
+.title-text{font-size:28px;font-weight:900;color:#e67e22;margin-bottom:20px;text-shadow:2px 2px 0 #fff;line-height:1.2}
+.title-img{width:300px;height:250px;object-fit:contain;margin-bottom:20px}
+button.start-btn,button.back-btn{color:#fff;border:none;padding:12px 30px;border-radius:30px;font-size:20px;font-weight:bold;cursor:pointer;box-shadow:0 4px 0 #d35400;background:#f39c12;border:3px solid #8b5a2b}
+button.start-btn:active,button.back-btn:active{transform:translateY(4px);box-shadow:none}
+#mute-btn{position:absolute;top:10px;right:10px;z-index:100;cursor:pointer;font-size:20px;background:rgba(255,255,255,.9);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:2px solid #8b5a2b}
+.menu-area{width:90%;height:70%;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:15px 10px}
+.menu-btn{background:#fceabb;color:#5c3a21;border:3px solid #f39c12;padding:15px;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer;text-align:left;position:relative;display:flex;justify-content:space-between;align-items:center}
+.menu-btn.cleared{background:#81ecec;border-color:#00cec9}
+.clear-mark-img{position:absolute;right:-15px;top:-15px;width:65px;height:65px;object-fit:contain;transform:rotate(15deg);z-index:5;pointer-events:none}
+.character-area{background:#fff8dc;width:100%;height:300px;display:flex;justify-content:center;align-items:flex-end;position:relative;overflow:hidden;border-bottom:3px solid #8b5a2b}
+.character-img{width:320px;height:320px;object-fit:contain;margin-bottom:-30px;z-index:1}
+.speech-bubble{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.7);border-radius:15px;padding:10px 15px;width:85%;min-height:60px;border:3px solid #8b5a2b;font-weight:900;color:#5c3a21;z-index:10;font-size:16px;line-height:1.3;text-align:left;white-space:pre-wrap}
+.quiz-area{flex:1;padding:15px;display:flex;flex-direction:column;justify-content:center}
+.options-grid{display:grid;gap:8px}
+button.option-btn{background:#fceabb;color:#5c3a21;border:3px solid #f39c12;padding:12px;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 3px 0 #f39c12;text-align:left}
+button.option-btn:disabled{background:#e0e0e0;border-color:#999;color:#666;box-shadow:none}
+.intermission-bg{background:#000;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden}
+.intermission-text{color:#ff9900;font-size:24px;font-weight:900;margin-bottom:50px;font-family:monospace;text-shadow:2px 2px 0 #fff}
+.pacman-track{position:absolute;width:100%;height:120px;top:50%;transform:translateY(-50%)}
+.coffee-char{position:absolute;width:100px;height:100px;top:10px;object-fit:contain}
+.coffee1-runner{right:-120px;animation:coffee1-run 4s linear forwards,coffee1-runner-u-turn 4s linear forwards}
+.coffee1-chaser{right:0;animation:coffee1-run 4s linear forwards,coffee1-chaser-u-turn 4s linear forwards}
+@keyframes coffee1-run{0%{right:-120px}45%{right:100%}55%{right:100%}100%{right:-120px}}
+@keyframes coffee1-runner-u-turn{0%{transform:scaleX(1)}45%{transform:scaleX(1)}50%{transform:scaleX(-1) scale(1.5)}100%{transform:scaleX(-1) scale(1.5)}}
+@keyframes coffee1-chaser-u-turn{0%{transform:scaleX(1)}45%{transform:scaleX(1)}50%{transform:scaleX(-1)}100%{transform:scaleX(-1)}}
+.reward-img{width:350px;height:350px;object-fit:contain;margin-bottom:20px}
+.correct-anim{animation:jump .5s}.wrong-anim{animation:shake .5s}
+@keyframes jump{0%{transform:translateY(0)}50%{transform:translateY(-20px)}100%{transform:translateY(0)}}
+@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}100%{transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="game-container">
+<div id="mute-btn" onclick="toggleMute()">🔊</div>
+<div id="title-screen" class="screen active-screen">
+<h1 class="title-text">クソハムちゃんの<br>政経150問特訓でちゅ！</h1>
+<img src="images/title.png" alt="title" class="title-img">
+<div class="btn-area"><button class="start-btn" onclick="playClickSound();showScreen('menu-screen')">メニューへいくでちゅ！</button></div>
+</div>
+<div id="menu-screen" class="screen">
+<h1 class="title-text">特訓項目を選ぶでちゅ！</h1>
+<div id="menu-area" class="menu-area"></div>
+<div class="btn-area"><button class="back-btn" onclick="playClickSound();showScreen('title-screen')" style="margin-top:10px">タイトルへもどる</button></div>
+</div>
+<div id="quiz-screen" class="screen" style="padding:0">
+<div class="character-area"><img id="char-img" src="" alt="char" class="character-img"><div id="char-voice" class="speech-bubble"></div></div>
+<div class="quiz-area"><div id="options" class="options-grid"></div></div>
+</div>
+<div id="intermission-screen" class="screen" style="padding:0">
+<div class="intermission-bg"><div class="intermission-text">～ ちょっと休憩でちゅ ～</div>
+<div class="pacman-track">
+<img id="runner-img" src="images/coffee/runner.png" alt="runner" class="coffee-char coffee1-runner">
+<img id="chaser-img" src="images/coffee/chaser.png" alt="chaser" class="coffee-char coffee1-chaser">
+</div></div></div>
+<div id="result-screen" class="screen">
+<h1 class="title-text">項目クリア！えらいでちゅ！</h1>
+<div id="result-message" class="title-text" style="font-size:20px"></div>
+<img id="reward-img" src="" alt="reward" class="reward-img">
+<div class="btn-area"><button class="back-btn" onclick="playClickSound();backToMenu()">メニューにもどるでちゅ！</button></div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/gh/pokari28/kusohamu@main/questions.js"></script>
+<script>
+const FALLBACK_TITLE='https://cdn.jsdelivr.net/gh/pokari28/kusohamu@main/title.png';
+const FALLBACK_GOOD='https://cdn.jsdelivr.net/gh/pokari28/kusohamu@main/good.png';
+const FALLBACK_MARK='https://cdn.jsdelivr.net/gh/pokari28/kusohamu@main/clear_mark.png';
+function A(path){
+ if(!path) return path;
+ if(window.ASSETS&&ASSETS[path]) return ASSETS[path];
+ if(/good\.png$/.test(path)) return FALLBACK_GOOD;
+ if(/marks\/|rewards\/|clear_mark/.test(path)) return FALLBACK_MARK;
+ return FALLBACK_TITLE;
+}
+function applyAssets(root){
+ (root||document).querySelectorAll('img').forEach(function(img){
+  var s=img.getAttribute('src');
+  if(s&&window.ASSETS&&ASSETS[s]) img.src=ASSETS[s];
+  else if(s) img.src=A(s);
+ });
+}
+window.onload=function(){applyAssets(document);showScreen('title-screen');};
+let currentQuestions=[],currentQIndex=0,score=0,wrongAnswerCount=0,currentSectionKey='',currentNormalImgNum=1,hasMissedCurrent=false;
+let availableNormals=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50];
+function pickNormalNum(){return availableNormals[Math.floor(Math.random()*availableNormals.length)]||1;}
+let audioCtx,isMuted=false;
+function initAudio(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}
+function playOscillator(freq,duration,type,volume){if(!audioCtx||isMuted)return;const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=type;osc.frequency.value=freq;osc.connect(gain);gain.connect(audioCtx.destination);const now=audioCtx.currentTime;osc.start(now);osc.stop(now+duration);gain.gain.setValueAtTime(volume,now);gain.gain.linearRampToValueAtTime(0,now+duration);}
+function toggleMute(){isMuted=!isMuted;document.getElementById('mute-btn').innerText=isMuted?'\uD83D\uDD07':'\uD83D\uDD0A';}
+function playTypeSound(){playOscillator(800+Math.random()*200,0.05,'square',0.02);}
+function playGoodSound(){playOscillator(660,0.1,'sine',0.1);setTimeout(()=>playOscillator(880,0.3,'sine',0.1),100);}
+function playBadSound(){playOscillator(150,0.2,'sawtooth',0.1);setTimeout(()=>playOscillator(100,0.3,'sawtooth',0.1),200);}
+function playClickSound(){playOscillator(1046.5,0.08,'square',0.05);}
+function playIntermissionSound(){let t=0;for(let i=0;i<8;i++){setTimeout(()=>playOscillator(400,0.05,'square',0.05),t);setTimeout(()=>playOscillator(500,0.05,'square',0.05),t+150);t+=300;}}
+function playFanfare(){playOscillator(523.25,0.15,'square',0.1);setTimeout(()=>playOscillator(659.25,0.15,'square',0.1),150);setTimeout(()=>playOscillator(783.99,0.15,'square',0.1),300);setTimeout(()=>playOscillator(1046.5,0.6,'square',0.1),450);}
+function showScreen(id){initAudio();document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active-screen');s.style.display='none';});const t=document.getElementById(id);if(t){t.style.display='flex';setTimeout(()=>t.classList.add('active-screen'),10);}if(id==='menu-screen')initMenu();}
+function initMenu(){if(typeof quizData==='undefined'){document.getElementById('menu-area').innerHTML='<p style="color:red;font-weight:bold">questions.js が読めないでちゅ！</p>';return;}const menu=document.getElementById('menu-area');menu.innerHTML='';for(const key in quizData){const section=quizData[key];const btn=document.createElement('button');btn.className='menu-btn';btn.innerText=section.title;if(localStorage.getItem('クソハム_政経_'+key)==='true'||localStorage.getItem('kusohamu_政経_'+key)==='true'){btn.classList.add('cleared');const n=key.replace('section','');const mark=document.createElement('img');mark.src=A('images/marks/mark'+n+'.png');mark.className='clear-mark-img';mark.onerror=function(){this.style.display='none';};btn.appendChild(mark);}btn.onclick=function(){playClickSound();startSection(key);};menu.appendChild(btn);}}
+function startSection(key){currentSectionKey=key;const section=quizData[key];if(!section||!section.questions||section.questions.length<10){alert('問題データが足りないでちゅ');return;}currentQuestions=shuffle(section.questions.slice());currentQIndex=0;score=0;wrongAnswerCount=0;showScreen('quiz-screen');showQuestion();}
+let typeWriterTimer;
+function showDialogue(text){const bubble=document.getElementById('char-voice');bubble.textContent='';if(typeWriterTimer)clearTimeout(typeWriterTimer);let i=0;function typeChar(){if(i<text.length){bubble.textContent+=text.charAt(i);playTypeSound();i++;typeWriterTimer=setTimeout(typeChar,40);}}typeChar();}
+const praises=['天才でちゅ！','クソえらいでちゅ！','ごはーーん！！でちゅ！','やるでちゅね！','ひまわりの種献上でちゅ！'];
+const preQuestions=['いくでちゅ！','次でちゅ！','わかるでちゅか？','ごはん、ごはんでちゅ！'];
+const bad_replies=['うきー！ちがうでちゅ！','やばいでちゅ！間違えたでちゅ！','ちーがーうーでーちゅーーー！！！','……ごはんが、遠のくでちゅ……'];
+function showQuestion(){if(currentQIndex>=currentQuestions.length){showIntermission();return;}const q=currentQuestions[currentQIndex];const charImg=document.getElementById('char-img');const optionsDiv=document.getElementById('options');charImg.classList.remove('correct-anim','wrong-anim');optionsDiv.innerHTML='';hasMissedCurrent=false;currentNormalImgNum=pickNormalNum();charImg.src=A('images/normal/normal'+currentNormalImgNum+'.png');charImg.onerror=function(){this.onerror=null;this.src=A('images/title.png');};showDialogue(currentQIndex===0?'政経特訓スタートでちゅ！':preQuestions[Math.floor(Math.random()*preQuestions.length)]);setTimeout(()=>{showDialogue('Q'+(currentQIndex+1)+'.\n'+q.q);const correctStr=q.options[q.ans];shuffle(q.options.slice()).forEach(opt=>{const btn=document.createElement('button');btn.className='option-btn';btn.innerText=opt;btn.onclick=e=>checkAnswer(opt,correctStr,e.target);optionsDiv.appendChild(btn);});},1200);}
+function checkAnswer(selected,correct,clicked){const charImg=document.getElementById('char-img');const buttons=document.querySelectorAll('#quiz-screen button.option-btn');buttons.forEach(b=>b.disabled=true);if(selected===correct){playGoodSound();if(!hasMissedCurrent)score++;clicked.style.backgroundColor='#ffb142';clicked.style.borderColor='#d35400';clicked.style.color='#fff';charImg.src=A('images/good.png');charImg.classList.add('correct-anim');showDialogue(praises[Math.floor(Math.random()*praises.length)]);currentQIndex++;setTimeout(showQuestion,2000);}else{playBadSound();hasMissedCurrent=true;const bi=(wrongAnswerCount%4)+1;wrongAnswerCount++;clicked.style.backgroundColor='#e0e0e0';clicked.style.borderColor='#999';clicked.dataset.clicked='true';charImg.src=A('images/bad/bad'+bi+'.png');charImg.classList.add('wrong-anim');showDialogue(bad_replies[bi-1]);setTimeout(()=>{charImg.src=A('images/normal/normal'+currentNormalImgNum+'.png');charImg.classList.remove('wrong-anim');showDialogue('Q'+(currentQIndex+1)+'.\n'+currentQuestions[currentQIndex].q);buttons.forEach(b=>{if(b.dataset.clicked!=='true')b.disabled=false;});},1500);}}
+function showIntermission(){showScreen('intermission-screen');playIntermissionSound();setTimeout(showResult,4500);}
+function showResult(){const n=currentSectionKey.replace('section','');const resultMsg=document.getElementById('result-message');const rewardImg=document.getElementById('reward-img');resultMsg.innerText='10問中、'+score+'問 1発正解でちゅ！';if(score===10){playFanfare();rewardImg.src=A('images/rewards/reward'+n+'.png');rewardImg.onerror=function(){this.onerror=null;this.src=A('images/good.png');};resultMsg.innerText+='\nパーフェクト！ご褒美画像をあげるでちゅ！';localStorage.setItem('kusohamu_政経_'+currentSectionKey,'true');}else{rewardImg.src=A('images/title.png');resultMsg.innerText+='\n全問1発正解したら、ご褒美画像が見れるでちゅ！\nやり直すでちゅ！';}showScreen('result-screen');}
+function backToMenu(){showScreen('menu-screen');}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+</script>
+</body>
+</html>
