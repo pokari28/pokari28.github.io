@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="2026残り金額">
 <title>2026年 残り金額</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#f3f4f6;--panel:#fff;--line:#e5e7eb;--muted:#6b7280;--danger:#b91c1c;--accent:#111827;--green:#166534}
 *{box-sizing:border-box}
@@ -18,7 +19,7 @@ button,input,select{font:inherit}
 .top{position:sticky;top:0;z-index:10;background:#111;color:#fff;padding:9px 9px 8px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .topline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
 .title{font-size:15px;font-weight:800;letter-spacing:.02em}
-.actions{display:flex;gap:4px}
+.actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .actions button{padding:4px 7px;border:1px solid #555;background:#1f2937;color:#fff;border-radius:5px;font-size:10px}
 .summary{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:5px}
 .card{background:#fff;color:#111;border-radius:6px;padding:5px 6px;min-width:0}
@@ -55,6 +56,19 @@ tr.done td.name input,tr.done td.money input,tr.done td.note input{color:#6b7280
 .add:active{background:#f3f4f6}
 .delete{display:block;margin:0 auto;border:0;background:transparent;color:#9ca3af;font-size:11px;padding:0;cursor:pointer}
 .footer{font-size:9px;color:var(--muted);padding:7px 2px}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none;align-items:flex-end;justify-content:center}
+.mask.show{display:flex}
+.sheet{width:100%;max-width:520px;background:#fff;border-radius:14px 14px 0 0;padding:14px 14px 18px}
+.sheet h2{margin:0 0 8px;font-size:15px}
+.sheet p{margin:0 0 10px;color:#4b5563;line-height:1.5}
+.sheet label{display:block;font-size:10px;color:#6b7280;margin:8px 0 3px}
+.sheet input[type=text],.sheet input[type=password]{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:#f9fafb}
+.sheet .row{display:flex;gap:6px;margin-top:12px}
+.sheet .row button{flex:1;padding:8px;border-radius:6px;border:1px solid #d1d5db;background:#fff}
+.sheet .row button.primary{background:#111;color:#fff;border-color:#111}
+.save-ok{color:#166534}
+.save-warn{color:#9a3412}
+.save-off{color:#6b7280}
 @media(max-width:620px){
  .summary{grid-template-columns:1.35fr 1fr 1fr}
  .card:last-child{display:none}
@@ -69,6 +83,7 @@ tr.done td.name input,tr.done td.money input,tr.done td.note input{color:#6b7280
   <div class="topline">
     <div class="title">2026年 残り金額</div>
     <div class="actions">
+      <button id="cloudBtn">クラウド</button>
       <button id="exportBtn">バックアップ</button>
       <button id="importBtn">復元</button>
       <button id="resetBtn">初期化</button>
@@ -86,13 +101,30 @@ tr.done td.name input,tr.done td.money input,tr.done td.note input{color:#6b7280
   <div class="meta">
     <div class="box">ノルマ残高基準 <input id="targetInput" inputmode="decimal"></div>
     <div class="box">単位：千円</div>
-    <div class="box" id="saveState">自動保存</div>
+    <div class="box" id="saveState">端末保存</div>
   </div>
   <div class="sections" id="sections"></div>
-  <div class="footer">会社名・見込額・確度・受注額・備考は、その場で直接入力。変更はこの端末のブラウザに自動保存します。</div>
+  <div class="footer">入力は自動保存。クラウド接続後は iPhone / iPad で同じ内容になります。</div>
 </main>
+<div class="mask" id="cloudMask">
+  <div class="sheet">
+    <h2>クラウド同期（Supabase）</h2>
+    <p>同じ設定を各端末で一度入れると、入力が自動で共有されます。anonキーだけで動きます。service_roleキーは使わないでください。</p>
+    <label>Project URL</label>
+    <input id="sbUrl" type="text" placeholder="https://xxxx.supabase.co" autocomplete="off">
+    <label>anon / publishable key</label>
+    <input id="sbKey" type="password" placeholder="eyJ... または sb_publishable_..." autocomplete="off">
+    <div class="row">
+      <button id="cloudCancel">閉じる</button>
+      <button id="cloudClear">解除</button>
+      <button class="primary" id="cloudSave">接続して同期</button>
+    </div>
+  </div>
+</div>
 <script>
 const STORAGE='yuuji_nokori_2026_v2';
+const CFG_KEY='yuuji_nokori_2026_supabase';
+const ROW_ID='2026';
 const initial={
  target:1800,
  sections:{
@@ -119,9 +151,39 @@ const initial={
   ]
  }
 };
-let state=load();
-function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE));return x&&x.sections?x:structuredClone(initial)}catch{return structuredClone(initial)}}
-function save(){localStorage.setItem(STORAGE,JSON.stringify(state));document.getElementById('saveState').textContent='保存済';setTimeout(()=>document.getElementById('saveState').textContent='自動保存',700)}
+let state=loadLocal();
+let sb=null;
+let channel=null;
+let applyingRemote=false;
+let lastCloudJson='';
+let saveTimer=null;
+
+function loadLocal(){try{const x=JSON.parse(localStorage.getItem(STORAGE));return x&&x.sections?x:structuredClone(initial)}catch{return structuredClone(initial)}}
+function loadCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null')}catch{return null}}
+function setStatus(text,cls){const el=document.getElementById('saveState');el.textContent=text;el.className='box '+(cls||'')}
+function persistLocal(){localStorage.setItem(STORAGE,JSON.stringify(state))}
+function save(fromRemote){
+ persistLocal();
+ if(fromRemote){setStatus('クラウド反映','save-ok');return}
+ setStatus(sb?'クラウド保存中…':'端末保存','save-ok');
+ if(!sb){setTimeout(()=>setStatus('端末保存','save-off'),700);return}
+ clearTimeout(saveTimer);
+ saveTimer=setTimeout(pushCloud,280);
+}
+async function pushCloud(){
+ if(!sb||applyingRemote)return;
+ const json=JSON.stringify(state);
+ if(json===lastCloudJson){setStatus('クラウド同期中','save-ok');return}
+ try{
+  const {error}=await sb.from('nokori_state').upsert({id:ROW_ID,payload:state,updated_at:new Date().toISOString()});
+  if(error)throw error;
+  lastCloudJson=json;
+  setStatus('クラウド保存済','save-ok');
+ }catch(e){
+  console.error(e);
+  setStatus('クラウド失敗・端末保存','save-warn');
+ }
+}
 function n(v){const x=parseFloat(String(v??'').replace(/,/g,''));return Number.isFinite(x)?x:0}
 function yen(v){return Math.round(v).toLocaleString('ja-JP')+'千円'}
 function esc(v){return String(v??'').replaceAll('&','&').replaceAll('"','"').replaceAll('<','<').replaceAll('>','>')}
@@ -161,11 +223,80 @@ function bind(){
  document.querySelectorAll('[data-del-sec]').forEach(b=>b.addEventListener('click',()=>{const sec=b.dataset.delSec,i=+b.dataset.delI;if(confirm('この行を削除しますか？')){state.sections[sec].splice(i,1);save();render()}}));
 }
 function focusRestore(sec,i,k){setTimeout(()=>{const el=document.querySelector(`[data-sec="${CSS.escape(sec)}"][data-i="${i}"][data-k="${k}"]`);if(el){el.focus();if(el.select)el.select()}},20)}
+function applyRemote(payload){
+ if(!payload||!payload.sections)return;
+ const json=JSON.stringify(payload);
+ if(json===JSON.stringify(state))return;
+ applyingRemote=true;
+ state=payload;
+ lastCloudJson=json;
+ persistLocal();
+ render();
+ setStatus('クラウド反映','save-ok');
+ applyingRemote=false;
+}
+async function connectCloud(cfg,opts){
+ if(!window.supabase){setStatus('SDK読込失敗','save-warn');return false}
+ disconnectCloud();
+ sb=window.supabase.createClient(cfg.url.trim(),cfg.key.trim());
+ try{
+  const {data,error}=await sb.from('nokori_state').select('payload').eq('id',ROW_ID).maybeSingle();
+  if(error)throw error;
+  if(data&&data.payload&&data.payload.sections){
+   applyRemote(data.payload);
+  }else{
+   const {error:upErr}=await sb.from('nokori_state').upsert({id:ROW_ID,payload:state,updated_at:new Date().toISOString()});
+   if(upErr)throw upErr;
+   lastCloudJson=JSON.stringify(state);
+  }
+  channel=sb.channel('nokori-2026')
+   .on('postgres_changes',{event:'*',schema:'public',table:'nokori_state',filter:`id=eq.${ROW_ID}`},ev=>{
+    if(applyingRemote)return;
+    applyRemote(ev.new&&ev.new.payload);
+   })
+   .subscribe();
+  setStatus('クラウド同期中','save-ok');
+  if(opts&&opts.persist)localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
+  return true;
+ }catch(e){
+  console.error(e);
+  sb=null;
+  setStatus('接続失敗','save-warn');
+  alert('Supabaseに接続できませんでした。URL・anonキー・SQL実行を確認してください。\n\n'+(e.message||e));
+  return false;
+ }
+}
+function disconnectCloud(){
+ if(channel){try{sb&&sb.removeChannel(channel)}catch(_){}}
+ channel=null;
+ sb=null;
+}
 document.getElementById('targetInput').addEventListener('change',e=>{state.target=n(e.target.value);save();summary()});
 document.getElementById('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='2026年_残り金額_バックアップ.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
 document.getElementById('fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);if(!x.sections)throw Error();state=x;save();render()}catch{alert('バックアップファイルを読み込めませんでした。')}};rd.readAsText(f)};
 document.getElementById('resetBtn').onclick=()=>{if(confirm('初期データに戻します。現在の入力は消えます。')){state=structuredClone(initial);save();render()}};
+document.getElementById('cloudBtn').onclick=()=>{
+ const cfg=loadCfg()||{};
+ document.getElementById('sbUrl').value=cfg.url||'';
+ document.getElementById('sbKey').value=cfg.key||'';
+ document.getElementById('cloudMask').classList.add('show');
+};
+document.getElementById('cloudCancel').onclick=()=>document.getElementById('cloudMask').classList.remove('show');
+document.getElementById('cloudClear').onclick=()=>{
+ localStorage.removeItem(CFG_KEY);
+ disconnectCloud();
+ setStatus('端末保存','save-off');
+ document.getElementById('cloudMask').classList.remove('show');
+};
+document.getElementById('cloudSave').onclick=async()=>{
+ const cfg={url:document.getElementById('sbUrl').value.trim(),key:document.getElementById('sbKey').value.trim()};
+ if(!cfg.url||!cfg.key){alert('URLとanonキーを入力してください。');return}
+ const ok=await connectCloud(cfg,{persist:true});
+ if(ok)document.getElementById('cloudMask').classList.remove('show');
+};
 render();
+const savedCfg=loadCfg();
+if(savedCfg&&savedCfg.url&&savedCfg.key)connectCloud(savedCfg);
 </script>
 </body></html>
