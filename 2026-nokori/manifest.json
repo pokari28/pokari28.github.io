@@ -1,0 +1,9 @@
+{
+  "name": "2026年 残り金額",
+  "short_name": "2026残り金額",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#111111",
+  "lang": "ja"
+}
