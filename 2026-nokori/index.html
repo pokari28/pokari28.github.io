@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="2026残り金額">
+<title>2026年 残り金額</title>
+<style>
+:root{--bg:#f3f4f6;--panel:#fff;--line:#e5e7eb;--muted:#6b7280;--danger:#b91c1c;--accent:#111827;--green:#166534}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;font-size:12px}
+body{padding-bottom:40px}
+button,input,select{font:inherit}
+.top{position:sticky;top:0;z-index:10;background:#111;color:#fff;padding:9px 9px 8px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.title{font-size:15px;font-weight:800;letter-spacing:.02em}
+.actions{display:flex;gap:4px}
+.actions button{padding:4px 7px;border:1px solid #555;background:#1f2937;color:#fff;border-radius:5px;font-size:10px}
+.summary{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:5px}
+.card{background:#fff;color:#111;border-radius:6px;padding:5px 6px;min-width:0}
+.card .lab{font-size:9px;color:#6b7280;white-space:nowrap}
+.card .num{font-size:17px;font-weight:800;line-height:1.15;white-space:nowrap}
+.card.main{background:#fee2e2}.card.main .num{font-size:21px;color:var(--danger)}
+.card.actual{background:#fff7ed}.card.actual .num{color:#9a3412}
+main{padding:7px}
+.meta{display:flex;gap:5px;align-items:center;margin:0 0 6px;flex-wrap:wrap}
+.meta .box{background:#fff;border:1px solid var(--line);border-radius:5px;padding:4px 6px}
+.meta input{width:76px;border:0;outline:0;font-weight:700;text-align:right;background:transparent}
+.sections{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-items:start}
+.section{background:var(--panel);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.section-head{display:flex;justify-content:space-between;align-items:center;padding:6px 7px;border-bottom:1px solid var(--line);font-weight:800}
+.section-sub{font-size:9px;color:var(--muted);font-weight:500}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border-bottom:1px solid #f0f0f0;padding:3px 4px;line-height:1.05;vertical-align:middle}
+th{font-size:9px;color:var(--muted);background:#fafafa;text-align:left}
+td{font-size:11px}
+th.name,td.name{width:auto}
+th.money,td.money{width:63px;text-align:right}
+th.conf,td.conf{width:36px;text-align:center}
+th.order,td.order{width:63px;text-align:right}
+th.note,td.note{width:52px}
+td input,td select{width:100%;border:0;outline:0;background:transparent;padding:1px 0;margin:0;color:#111;min-width:0}
+td.name input{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.money input,td.order input{text-align:right}
+td.conf select{text-align:center;appearance:none;-webkit-appearance:none;font-weight:800}
+td.note input{font-size:9px;color:#555}
+tr.done{background:#f8fafc}
+tr.done td.name input,tr.done td.money input,tr.done td.note input{color:#6b7280}
+.sumrow td{font-weight:800;background:#fafafa;border-bottom:0}
+.add{display:flex;justify-content:center;align-items:center;min-height:25px;color:#4b5563;font-size:10px;cursor:pointer}
+.add:active{background:#f3f4f6}
+.delete{display:block;margin:0 auto;border:0;background:transparent;color:#9ca3af;font-size:11px;padding:0;cursor:pointer}
+.footer{font-size:9px;color:var(--muted);padding:7px 2px}
+@media(max-width:620px){
+ .summary{grid-template-columns:1.35fr 1fr 1fr}
+ .card:last-child{display:none}
+ .sections{grid-template-columns:1fr}
+ .section{width:100%}
+}
+@media(min-width:900px){main{max-width:1100px;margin:auto}.sections{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topline">
+    <div class="title">2026年 残り金額</div>
+    <div class="actions">
+      <button id="exportBtn">バックアップ</button>
+      <button id="importBtn">復元</button>
+      <button id="resetBtn">初期化</button>
+      <input id="fileInput" type="file" accept="application/json" hidden>
+    </div>
+  </div>
+  <div class="summary">
+    <div class="card main"><div class="lab">見込不足</div><div class="num" id="forecastShort">—</div></div>
+    <div class="card"><div class="lab">見込額計</div><div class="num" id="forecastTotal">—</div></div>
+    <div class="card actual"><div class="lab">実際不足</div><div class="num" id="actualShort">—</div></div>
+    <div class="card"><div class="lab">初期設定不足</div><div class="num" id="targetCard">—</div></div>
+  </div>
+</header>
+<main>
+  <div class="meta">
+    <div class="box">ノルマ残高基準 <input id="targetInput" inputmode="decimal"></div>
+    <div class="box">単位：千円</div>
+    <div class="box" id="saveState">自動保存</div>
+  </div>
+  <div class="sections" id="sections"></div>
+  <div class="footer">会社名・見込額・確度・受注額・備考は、その場で直接入力。変更はこの端末のブラウザに自動保存します。</div>
+</main>
+<script>
+const STORAGE='yuuji_nokori_2026_v2';
+const initial={
+ target:1800,
+ sections:{
+  '加盟料':[
+   {name:'コーワ',forecast:90,conf:'B',order:0,note:'回転'},
+   {name:'藤嶋鉄工',forecast:120,conf:'A',order:0,note:'回転'},
+   {name:'アクティブイエロー',forecast:50,conf:'C',order:0,note:'回転'},
+   {name:'シグマソリューションズ',forecast:200,conf:'B',order:0,note:'回転'},
+   {name:'石垣鉄工',forecast:70,conf:'C',order:0,note:'回転'},
+   {name:'コーワ',forecast:90,conf:'C',order:0,note:'回転'},
+   {name:'アニモ',forecast:70,conf:'C',order:0,note:'回転'},
+   {name:'小坂建設',forecast:90,conf:'C',order:0,note:'回転'},
+   {name:'踊澤製材所',forecast:70,conf:'C',order:0,note:'回転'}
+  ],
+  'COSMOSその他':[
+   {name:'シグマソリューションズ',forecast:270,conf:'',order:0,note:'５ステップ'},
+   {name:'コスギ',forecast:45,conf:'',order:0,note:'web修正'},
+   {name:'トップギア',forecast:45,conf:'',order:0,note:'web修正'},
+   {name:'奥羽住宅設備',forecast:110,conf:'',order:0,note:'ディスク'},
+   {name:'大館製作所',forecast:110,conf:'',order:0,note:'ディスク'},
+   {name:'読売ｉs',forecast:60,conf:'',order:0,note:'ディスク'},
+   {name:'清三屋商事',forecast:45,conf:'',order:0,note:'ニュース'},
+   {name:'ヨロズヤ',forecast:30,conf:'',order:0,note:'登録くん'}
+  ]
+ }
+};
+let state=load();
+function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE));return x&&x.sections?x:structuredClone(initial)}catch{return structuredClone(initial)}}
+function save(){localStorage.setItem(STORAGE,JSON.stringify(state));document.getElementById('saveState').textContent='保存済';setTimeout(()=>document.getElementById('saveState').textContent='自動保存',700)}
+function n(v){const x=parseFloat(String(v??'').replace(/,/g,''));return Number.isFinite(x)?x:0}
+function yen(v){return Math.round(v).toLocaleString('ja-JP')+'千円'}
+function esc(v){return String(v??'').replaceAll('&','&').replaceAll('"','"').replaceAll('<','<').replaceAll('>','>')}
+function summary(){
+ let f=0,o=0; Object.values(state.sections).forEach(rows=>rows.forEach(r=>{f+=n(r.forecast);o+=n(r.order)}));
+ document.getElementById('forecastTotal').textContent=yen(f);
+ document.getElementById('forecastShort').textContent=yen(Math.max(0,n(state.target)-f));
+ document.getElementById('actualShort').textContent=yen(Math.max(0,n(state.target)-o));
+ document.getElementById('targetCard').textContent=yen(n(state.target));
+ document.getElementById('targetInput').value=n(state.target);
+}
+function render(){
+ const root=document.getElementById('sections');root.innerHTML='';
+ Object.entries(state.sections).forEach(([sec,rows])=>{
+  const wrap=document.createElement('section');wrap.className='section';
+  let html=`<div class="section-head"><span>${esc(sec)}</span><span class="section-sub">${yen(rows.reduce((a,r)=>a+n(r.forecast),0))}</span></div><table><thead><tr><th class="name">会社</th><th class="money">見込</th><th class="conf">確度</th><th class="order">受注</th><th class="note">備考</th><th style="width:18px"></th></tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+   html+=`<tr class="${n(r.order)>0?'done':''}">
+    <td class="name"><input value="${esc(r.name)}" data-sec="${esc(sec)}" data-i="${i}" data-k="name"></td>
+    <td class="money"><input inputmode="decimal" value="${r.forecast??''}" data-sec="${esc(sec)}" data-i="${i}" data-k="forecast"></td>
+    <td class="conf"><select data-sec="${esc(sec)}" data-i="${i}" data-k="conf"><option value="" ${r.conf===''?'selected':''}>–</option><option value="A" ${r.conf==='A'?'selected':''}>A</option><option value="B" ${r.conf==='B'?'selected':''}>B</option><option value="C" ${r.conf==='C'?'selected':''}>C</option></select></td>
+    <td class="order"><input inputmode="decimal" value="${r.order??''}" data-sec="${esc(sec)}" data-i="${i}" data-k="order"></td>
+    <td class="note"><input value="${esc(r.note)}" data-sec="${esc(sec)}" data-i="${i}" data-k="note"></td>
+    <td><button class="delete" title="削除" data-del-sec="${esc(sec)}" data-del-i="${i}">×</button></td>
+   </tr>`;
+  });
+  const sum=rows.reduce((a,r)=>a+n(r.forecast),0); const ord=rows.reduce((a,r)=>a+n(r.order),0);
+  html+=`<tr class="sumrow"><td>小計</td><td class="money">${sum.toLocaleString('ja-JP')}</td><td></td><td class="order">${ord.toLocaleString('ja-JP')}</td><td></td><td></td></tr></tbody></table><div class="add" data-add-sec="${esc(sec)}">＋ 行を追加</div>`;
+  wrap.innerHTML=html;root.appendChild(wrap);
+ });
+ bind();summary();
+}
+function bind(){
+ document.querySelectorAll('[data-k]').forEach(el=>el.addEventListener('change',()=>{const sec=el.dataset.sec,i=+el.dataset.i,k=el.dataset.k;state.sections[sec][i][k]=(k==='forecast'||k==='order')?n(el.value):el.value;save();render();focusRestore(sec,i,k)}));
+ document.querySelectorAll('[data-k]').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')el.blur()}));
+ document.querySelectorAll('[data-add-sec]').forEach(b=>b.addEventListener('click',()=>{const sec=b.dataset.addSec;state.sections[sec].push({name:'',forecast:0,conf:'',order:0,note:''});save();render();setTimeout(()=>{const last=document.querySelector(`input[data-sec="${CSS.escape(sec)}"][data-i="${state.sections[sec].length-1}"][data-k="name"]`);last&&last.focus()},30)}));
+ document.querySelectorAll('[data-del-sec]').forEach(b=>b.addEventListener('click',()=>{const sec=b.dataset.delSec,i=+b.dataset.delI;if(confirm('この行を削除しますか？')){state.sections[sec].splice(i,1);save();render()}}));
+}
+function focusRestore(sec,i,k){setTimeout(()=>{const el=document.querySelector(`[data-sec="${CSS.escape(sec)}"][data-i="${i}"][data-k="${k}"]`);if(el){el.focus();if(el.select)el.select()}},20)}
+document.getElementById('targetInput').addEventListener('change',e=>{state.target=n(e.target.value);save();summary()});
+document.getElementById('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='2026年_残り金額_バックアップ.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);if(!x.sections)throw Error();state=x;save();render()}catch{alert('バックアップファイルを読み込めませんでした。')}};rd.readAsText(f)};
+document.getElementById('resetBtn').onclick=()=>{if(confirm('初期データに戻します。現在の入力は消えます。')){state=structuredClone(initial);save();render()}};
+render();
+</script>
+</body></html>
